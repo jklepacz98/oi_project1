@@ -122,7 +122,7 @@ def chart_measures(datasets):
 
 
 # najlepsze wykresy silhoueete
-def charts_sil_better(datasets):
+def charts_sil_best(datasets):
     for i in range(len(datasets) - 3):
 
         x = datasets[i].iloc[0:, 0]
@@ -144,7 +144,7 @@ def charts_sil_better(datasets):
 
 
 # najgorsze wykresy silhoueete
-def charts_sil_worse(datasets):
+def charts_sil_worst(datasets):
     for i in range(len(datasets) - 3):
 
         x = datasets[i].iloc[0:, 0]
@@ -166,7 +166,7 @@ def charts_sil_worse(datasets):
 
 
 # najlepsze wykresy reszta miar
-def charts_other_better(datasets):
+def charts_other_best(datasets):
     for i in range(len(datasets) - 3):
 
         x = datasets[i].iloc[0:, 0]
@@ -188,7 +188,7 @@ def charts_other_better(datasets):
 
 
 # najgorsze wykresy reszta miar
-def charts_other_worse(datasets):
+def charts_other_worst(datasets):
     for i in range(len(datasets) - 3):
 
         x = datasets[i].iloc[0:, 0]
@@ -261,7 +261,9 @@ data.append([skld.load_breast_cancer()])
 charts(data)
 chart_silhoueete(data)
 chart_measures(data)
-charts_sil_better(data)
-charts_sil_worse(data)
-charts_other_better(data)
-charts_other_worse(data)
+charts_sil_best(data)
+charts_sil_worst(data)
+charts_other_best(data)
+charts_other_worst(data)
+
+plt.show()

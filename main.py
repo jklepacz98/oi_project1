@@ -10,14 +10,13 @@ Created on Thu Mar 21 22:38:54 2024
 import matplotlib.pyplot as plt
 import pandas as pd
 import sklearn.datasets as skld
+from scipy.spatial import Voronoi, voronoi_plot_2d
+from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score, adjusted_rand_score, homogeneity_score, completeness_score, \
     v_measure_score
-from sklearn.preprocessing import StandardScaler
-from sklearn.cluster import KMeans
-from scipy.spatial import Voronoi, voronoi_plot_2d
 
 # ścieżki do plików
-x_path = ["1_1.csv", "1_2.csv", "1_3.csv", "2_1.csv", "2_2.csv", "2_3.csv"]
+paths = ["1_1.csv", "1_2.csv", "1_3.csv", "2_1.csv", "2_2.csv", "2_3.csv"]
 
 # grupa wykresów z rzeczywistym podziałem
 fig1, ax1 = plt.subplots(1, 6, figsize=(30, 5))
@@ -60,12 +59,11 @@ met_min = [10, 10, 7, 10, 10, 4]  # minima innych miar
 
 
 # wczytywanie plików
-def load1(path):
-    for k in path:
-        data.append(pd.read_csv(k, sep=";", header=None))
+def load_from_csv(paths):
+    return [pd.read_csv(path, sep=";", header=None) for path in paths]
 
 
-load1(x_path)
+data = load_from_csv(paths)
 
 # dodawanie zbiorow z slearn
 data.append([skld.load_iris()])

@@ -6,10 +6,8 @@ Created on Thu Mar 21 22:38:54 2024
 @author: adrian
 """
 
-# biblioteki
 import matplotlib.pyplot as plt
 import pandas as pd
-import sklearn.datasets as skld
 from scipy.spatial import Voronoi, voronoi_plot_2d
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score, adjusted_rand_score, homogeneity_score, completeness_score, \
@@ -23,7 +21,13 @@ def load_from_csv(paths):
 
 # wykresy z etykietami prawdziwymi i przewidzianymi -rysowanie
 def charts(datasets):
-    for i in range(len(datasets) - 3):
+    # grupa wykresów z rzeczywistym podziałem
+    fig1, ax1 = plt.subplots(1, 6, figsize=(30, 5))
+    fig1.tight_layout()
+    # grupa wykresów z przewidzianym podziałem Kmeans
+    fig2, ax2 = plt.subplots(1, 6, figsize=(30, 5))
+    fig2.tight_layout()
+    for i in range(len(datasets)):
 
         #######################################################################################
         #############################  pierwsza grupa wykresów  ######################################
@@ -68,7 +72,15 @@ def charts(datasets):
 
 # miara silhoueete - rysowanie
 def chart_silhoueete(datasets):
-    for i in range(len(datasets) - 3):  # dzialanie na 6 zbiorach
+    # grupa wykresów z miarą silhoueete
+    fig3, ax3 = plt.subplots(1, 6, figsize=(30, 5))
+    fig3.tight_layout()
+
+    k_meansN_rate = []
+
+    linspace = []  # ilosc klastorw
+
+    for i in range(len(datasets)):  # dzialanie na 6 zbiorach
         for k in range(2, 12):  # ustanowienie ilosci zbiorow
 
             kmeans = KMeans(n_clusters=k, random_state=0)  # ustanowienie ilosci klastrow w metodzie Kmeans
@@ -92,7 +104,14 @@ def chart_silhoueete(datasets):
 
 # reszta miar
 def chart_measures(datasets):
-    for i in range(len(datasets) - 3):
+    # grupa wykresów z reszta miar
+    fig4, ax4 = plt.subplots(1, 6, figsize=(30, 5))
+    fig4.tight_layout()
+
+    k_meansNN_rate = []  # wartosci miary silhoueete
+    linspacee = []  # ilosc klastorw
+
+    for i in range(len(datasets)):
         for k in range(2, 12):
 
             y_true = datasets[i].iloc[0:, 2]
@@ -123,7 +142,10 @@ def chart_measures(datasets):
 
 # najlepsze wykresy silhoueete
 def charts_sil_best(datasets):
-    for i in range(len(datasets) - 3):
+    # wykresy najlepszy podzial dla silhoueete
+    fig5, ax5 = plt.subplots(1, 6, figsize=(30, 5))
+    fig5.tight_layout()
+    for i in range(len(datasets)):
 
         x = datasets[i].iloc[0:, 0]
         y = datasets[i].iloc[0:, 1]
@@ -145,7 +167,10 @@ def charts_sil_best(datasets):
 
 # najgorsze wykresy silhoueete
 def charts_sil_worst(datasets):
-    for i in range(len(datasets) - 3):
+    # wykresy najgorszy podzial dla silhoueete
+    fig6, ax6 = plt.subplots(1, 6, figsize=(30, 5))
+    fig6.tight_layout()
+    for i in range(len(datasets)):
 
         x = datasets[i].iloc[0:, 0]
         y = datasets[i].iloc[0:, 1]
@@ -167,7 +192,10 @@ def charts_sil_worst(datasets):
 
 # najlepsze wykresy reszta miar
 def charts_other_best(datasets):
-    for i in range(len(datasets) - 3):
+    # wykresy najlepszy podzial dla reszty miar
+    fig7, ax7 = plt.subplots(1, 6, figsize=(30, 5))
+    fig7.tight_layout()
+    for i in range(len(datasets)):
 
         x = datasets[i].iloc[0:, 0]
         y = datasets[i].iloc[0:, 1]
@@ -189,7 +217,10 @@ def charts_other_best(datasets):
 
 # najgorsze wykresy reszta miar
 def charts_other_worst(datasets):
-    for i in range(len(datasets) - 3):
+    # wykresy najgorszy podzial dla reszty miar
+    fig8, ax8 = plt.subplots(1, 6, figsize=(30, 5))
+    fig8.tight_layout()
+    for i in range(len(datasets)):
 
         x = datasets[i].iloc[0:, 0]
         y = datasets[i].iloc[0:, 1]
@@ -212,58 +243,20 @@ def charts_other_worst(datasets):
 # ścieżki do plików
 paths = ["1_1.csv", "1_2.csv", "1_3.csv", "2_1.csv", "2_2.csv", "2_3.csv"]
 
-# grupa wykresów z rzeczywistym podziałem
-fig1, ax1 = plt.subplots(1, 6, figsize=(30, 5))
-fig1.tight_layout()
-# grupa wykresów z przewidzianym podziałem Kmeans
-fig2, ax2 = plt.subplots(1, 6, figsize=(30, 5))
-fig2.tight_layout()
-# grupa wykresów z miarą silhoueete
-fig3, ax3 = plt.subplots(1, 6, figsize=(30, 5))
-fig3.tight_layout()
-# grupa wykresów z reszta miar
-fig4, ax4 = plt.subplots(1, 6, figsize=(30, 5))
-fig4.tight_layout()
-
-# wykresy najlepszy podzial dla silhoueete
-fig5, ax5 = plt.subplots(1, 6, figsize=(30, 5))
-fig5.tight_layout()
-# wykresy najgorszy podzial dla silhoueete
-fig6, ax6 = plt.subplots(1, 6, figsize=(30, 5))
-fig6.tight_layout()
-# wykresy najlepszy podzial dla reszty miar
-fig7, ax7 = plt.subplots(1, 6, figsize=(30, 5))
-fig7.tight_layout()
-# wykresy najgorszy podzial dla reszty miar
-fig8, ax8 = plt.subplots(1, 6, figsize=(30, 5))
-fig8.tight_layout()
-
-data = []  # dane
-
-k_meansN_rate = []
-linspace = []  # ilosc klastorw
-k_meansNN_rate = []  # wartosci miary silhoueete
-linspacee = []  # ilosc klastorw
-
 sil_max = []  # makszyma silhoueete
 sil_min = []  # minima silhoueete
 
 met_max = [2, 2, 6, 2, 3, 3]  # maksima innych miar
 met_min = [10, 10, 7, 10, 10, 4]  # minima innych miar
 
-data = load_from_csv(paths)
+datasets_from_csv = load_from_csv(paths)
 
-# dodawanie zbiorow z slearn
-data.append([skld.load_iris()])
-data.append([skld.load_wine()])
-data.append([skld.load_breast_cancer()])
-
-charts(data)
-chart_silhoueete(data)
-chart_measures(data)
-charts_sil_best(data)
-charts_sil_worst(data)
-charts_other_best(data)
-charts_other_worst(data)
+charts(datasets_from_csv)
+chart_silhoueete(datasets_from_csv)
+chart_measures(datasets_from_csv)
+charts_sil_best(datasets_from_csv)
+charts_sil_worst(datasets_from_csv)
+charts_other_best(datasets_from_csv)
+charts_other_worst(datasets_from_csv)
 
 plt.show()

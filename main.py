@@ -19,59 +19,47 @@ def load_from_csv(paths):
     return [pd.read_csv(path, sep=";", header=None) for path in paths]
 
 
-# wykresy z etykietami prawdziwymi i przewidzianymi -rysowanie
+def plot_voronoi(ax, points, labels):
+    vor = Voronoi(points)
+    voronoi_plot_2d(vor, ax=ax, show_vertices=False, show_points=False, show_region=True, show_points_label=False)
+    for r in range(len(vor.point_region)):
+        region = vor.regions[vor.point_region[r]]
+        if not -1 in region:
+            polygon = [vor.vertices[i] for i in region]
+            ax.fill(*zip(*polygon), color=plt.cm.Set1(labels[r], alpha=0.5))
+
+
+def plot_kmeans_clusters(ax, dataset, kmeans):
+    labels = kmeans.labels_
+    plot_voronoi(ax, dataset.iloc[:, 0:2].to_numpy(), labels)
+    ax.scatter(dataset.iloc[:, 0], dataset.iloc[:, 1], c=labels)
+
+
+def calculate_kmeans(dataset, n_clusters):
+    return KMeans(n_clusters=n_clusters, random_state=0).fit(dataset.iloc[0:, 0:2].to_numpy())
+
+
+# todo change name of the function
 def charts(datasets):
-    # grupa wykresów z rzeczywistym podziałem
-    fig1, ax1 = plt.subplots(1, 6, figsize=(30, 5))
-    fig1.tight_layout()
-    # grupa wykresów z przewidzianym podziałem Kmeans
-    fig2, ax2 = plt.subplots(1, 6, figsize=(30, 5))
-    fig2.tight_layout()
-    for i in range(len(datasets)):
-
-        #######################################################################################
-        #############################  pierwsza grupa wykresów  ######################################
-        #######################################################################################
-
-        # rozdział danych
-        x = datasets[i].iloc[0:, 0]
-        y = datasets[i].iloc[0:, 1]
-        y_true = datasets[i].iloc[0:, 2]
-
-        # rysowanie diagramu voronoia z kolorami
-        vor = Voronoi(datasets[i].iloc[0:, 0:2].to_numpy())
-        voronoi_plot_2d(vor, ax=ax1[i], show_vertices=False, show_points=False, show_region=True,
-                        show_points_label=False)
-        for r in range(len(vor.point_region)):
-            region = vor.regions[vor.point_region[r]]
-            if not -1 in region:
-                polygon = [vor.vertices[i] for i in region]
-                ax1[i].fill(*zip(*polygon), color=plt.cm.Set1(y_true[r], alpha=0.5))
-
-        # rysowanie punktow
-        ax1[i].scatter(x, y, c=y_true)  #
-        ax1[i].set_xlabel("2_cluster")
-
-        #######################################################################################
-        #############################    druga grupa wykresów    ######################################
-        #######################################################################################
-
-        kmeans = KMeans(n_clusters=2, random_state=0).fit(datasets[i].iloc[0:, 0:2].to_numpy())
-
-        voronoi_plot_2d(vor, ax=ax2[i], show_vertices=False, show_points=False, show_region=True,
-                        show_points_label=False)
-        for r in range(len(vor.point_region)):
-            region = vor.regions[vor.point_region[r]]
-            if not -1 in region:
-                polygon = [vor.vertices[i] for i in region]
-                ax2[i].fill(*zip(*polygon), color=plt.cm.Set1(kmeans.labels_[r], alpha=0.5))
-
-        ax2[i].scatter(x, y, c=kmeans.labels_)  #
-        ax2[i].set_xlabel("2_cluster")
+    fig, ax = plt.subplots(1, 6, figsize=(30, 5))
+    fig.tight_layout()
+    for dataset, axis in zip(datasets, ax):
+        labels = dataset.iloc[0:, 2]
+        points = dataset.iloc[:, 0:2].to_numpy()
+        plot_voronoi(axis, points, labels)
 
 
-# miara silhoueete - rysowanie
-def chart_silhoueete(datasets):
+# todo change name of the function
+def charts_kmeans(datasets):
+    fig, ax = plt.subplots(1, 6, figsize=(30, 5))
+    fig.tight_layout()
+    for dataset, axis in zip(datasets, ax):
+        kmeans = calculate_kmeans(dataset, 2)
+        plot_kmeans_clusters(axis, dataset, kmeans)
+
+
+# todo change name of the function
+def chart_silhoueete(datasets, sil_max, sil_min):
     # grupa wykresów z miarą silhoueete
     fig3, ax3 = plt.subplots(1, 6, figsize=(30, 5))
     fig3.tight_layout()
@@ -102,11 +90,11 @@ def chart_silhoueete(datasets):
         ax3[i].plot(linspace, k_meansN_rate)  #
 
 
-# reszta miar
+# todo change name of the function
 def chart_measures(datasets):
     # grupa wykresów z reszta miar
-    fig4, ax4 = plt.subplots(1, 6, figsize=(30, 5))
-    fig4.tight_layout()
+    fig, ax = plt.subplots(1, 6, figsize=(30, 5))
+    fig.tight_layout()
 
     k_meansNN_rate = []  # wartosci miary silhoueete
     linspacee = []  # ilosc klastorw
@@ -134,129 +122,59 @@ def chart_measures(datasets):
                 linspacee.clear()
 
         # rysowanie od razu 6 przebiegów na każdym pojedynczym wykresie
-        ax4[i].plot(linspacee, k_meansNN_rate)  #
-        ax4[i].set_xlabel("n_cluster")
-        ax4[i].legend(["adjusted rand", "homogeneity", "completeness", "v-measure beta=0.5", "v-measure beta=1",
-                       "v-measure beta=2"])
+        ax[i].plot(linspacee, k_meansNN_rate)  #
+        ax[i].set_xlabel("n_cluster")
+        ax[i].legend(["adjusted rand", "homogeneity", "completeness", "v-measure beta=0.5", "v-measure beta=1",
+                      "v-measure beta=2"])
 
 
-# najlepsze wykresy silhoueete
-def charts_sil_best(datasets):
-    # wykresy najlepszy podzial dla silhoueete
-    fig5, ax5 = plt.subplots(1, 6, figsize=(30, 5))
-    fig5.tight_layout()
-    for i in range(len(datasets)):
-
-        x = datasets[i].iloc[0:, 0]
-        y = datasets[i].iloc[0:, 1]
-
-        kmeans = KMeans(n_clusters=sil_max[i], random_state=0).fit(datasets[i].iloc[0:, 0:2].to_numpy())
-
-        ax5[i].scatter(x, y, c=kmeans.labels_)  #
-        ax5[i].set_xlabel("%s_cluster" % (sil_max[i]))
-
-        vor = Voronoi(datasets[i].iloc[0:, 0:2].to_numpy())
-        voronoi_plot_2d(vor, ax=ax5[i], show_vertices=False, show_points=False, show_region=True,
-                        show_points_label=False)
-        for r in range(len(vor.point_region)):
-            region = vor.regions[vor.point_region[r]]
-            if not -1 in region:
-                polygon = [vor.vertices[i] for i in region]
-                ax5[i].fill(*zip(*polygon), color=plt.cm.Set1(kmeans.labels_[r], alpha=0.5))
+# todo change name of the function
+def charts_sil(datasets, sils):
+    fig, ax = plt.subplots(1, 6, figsize=(30, 5))
+    fig.tight_layout()
+    # todo
+    for dataset, sil, axis in zip(datasets, sils, ax):
+        # kmeans = KMeans(n_clusters=sil, random_state=0).fit(datasets[i].iloc[0:, 0:2].to_numpy())
+        kmeans = calculate_kmeans(dataset, sil)
+        labels = kmeans.labels_
+        points = dataset.iloc[0:, 0:2].to_numpy()
+        plot_voronoi(axis, points, labels)
 
 
-# najgorsze wykresy silhoueete
-def charts_sil_worst(datasets):
-    # wykresy najgorszy podzial dla silhoueete
-    fig6, ax6 = plt.subplots(1, 6, figsize=(30, 5))
-    fig6.tight_layout()
-    for i in range(len(datasets)):
-
-        x = datasets[i].iloc[0:, 0]
-        y = datasets[i].iloc[0:, 1]
-
-        kmeans = KMeans(n_clusters=sil_min[i], random_state=0).fit(datasets[i].iloc[0:, 0:2].to_numpy())
-
-        ax6[i].scatter(x, y, c=kmeans.labels_)  #
-        ax6[i].set_xlabel("%s_cluster" % (sil_min[i]))
-
-        vor = Voronoi(datasets[i].iloc[0:, 0:2].to_numpy())
-        voronoi_plot_2d(vor, ax=ax6[i], show_vertices=False, show_points=False, show_region=True,
-                        show_points_label=False)
-        for r in range(len(vor.point_region)):
-            region = vor.regions[vor.point_region[r]]
-            if not -1 in region:
-                polygon = [vor.vertices[i] for i in region]
-                ax6[i].fill(*zip(*polygon), color=plt.cm.Set1(kmeans.labels_[r], alpha=0.5))
-
-
-# najlepsze wykresy reszta miar
-def charts_other_best(datasets):
+# todo change name of the function
+def charts_metrics(datasets, metrics):
     # wykresy najlepszy podzial dla reszty miar
-    fig7, ax7 = plt.subplots(1, 6, figsize=(30, 5))
-    fig7.tight_layout()
-    for i in range(len(datasets)):
-
-        x = datasets[i].iloc[0:, 0]
-        y = datasets[i].iloc[0:, 1]
-
-        kmeans = KMeans(n_clusters=met_max[i], random_state=0).fit(datasets[i].iloc[0:, 0:2].to_numpy())
-
-        ax7[i].scatter(x, y, c=kmeans.labels_)  #
-        ax7[i].set_xlabel("%s_cluster" % (met_max[i]))
-
-        vor = Voronoi(datasets[i].iloc[0:, 0:2].to_numpy())
-        voronoi_plot_2d(vor, ax=ax7[i], show_vertices=False, show_points=False, show_region=True,
-                        show_points_label=False)
-        for r in range(len(vor.point_region)):
-            region = vor.regions[vor.point_region[r]]
-            if not -1 in region:
-                polygon = [vor.vertices[i] for i in region]
-                ax7[i].fill(*zip(*polygon), color=plt.cm.Set1(kmeans.labels_[r], alpha=0.5))
+    fig, ax = plt.subplots(1, 6, figsize=(30, 5))
+    fig.tight_layout()
+    # todo
+    for dataset, metric, axis in zip(datasets, metrics, ax):
+        kmeans = calculate_kmeans(dataset, metric)
+        plot_kmeans_clusters(axis, dataset, kmeans)
 
 
-# najgorsze wykresy reszta miar
-def charts_other_worst(datasets):
-    # wykresy najgorszy podzial dla reszty miar
-    fig8, ax8 = plt.subplots(1, 6, figsize=(30, 5))
-    fig8.tight_layout()
-    for i in range(len(datasets)):
+def main():
+    # ścieżki do plików
+    paths = ["1_1.csv", "1_2.csv", "1_3.csv", "2_1.csv", "2_2.csv", "2_3.csv"]
 
-        x = datasets[i].iloc[0:, 0]
-        y = datasets[i].iloc[0:, 1]
+    sil_max = []  # maksyma silhoueete
+    sil_min = []  # minima silhoueete
 
-        kmeans = KMeans(n_clusters=met_min[i], random_state=0).fit(datasets[i].iloc[0:, 0:2].to_numpy())
+    met_max = [2, 2, 6, 2, 3, 3]  # maksima innych miar
+    met_min = [10, 10, 7, 10, 10, 4]  # minima innych miar
 
-        ax8[i].scatter(x, y, c=kmeans.labels_)  #
-        ax8[i].set_xlabel("%s_cluster" % (met_min[i]))
+    datasets_from_csv = load_from_csv(paths)
 
-        vor = Voronoi(datasets[i].iloc[0:, 0:2].to_numpy())
-        voronoi_plot_2d(vor, ax=ax8[i], show_vertices=False, show_points=False, show_region=True,
-                        show_points_label=False)
-        for r in range(len(vor.point_region)):
-            region = vor.regions[vor.point_region[r]]
-            if not -1 in region:
-                polygon = [vor.vertices[i] for i in region]
-                ax8[i].fill(*zip(*polygon), color=plt.cm.Set1(kmeans.labels_[r], alpha=0.5))
+    charts(datasets_from_csv)
+    charts_kmeans(datasets_from_csv)
+    chart_silhoueete(datasets_from_csv, sil_max, sil_min)
+    chart_measures(datasets_from_csv)
+    charts_sil(datasets_from_csv, sil_max)
+    charts_sil(datasets_from_csv, sil_min)
+    charts_metrics(datasets_from_csv, met_max)
+    charts_metrics(datasets_from_csv, met_min)
+
+    plt.show()
 
 
-# ścieżki do plików
-paths = ["1_1.csv", "1_2.csv", "1_3.csv", "2_1.csv", "2_2.csv", "2_3.csv"]
-
-sil_max = []  # makszyma silhoueete
-sil_min = []  # minima silhoueete
-
-met_max = [2, 2, 6, 2, 3, 3]  # maksima innych miar
-met_min = [10, 10, 7, 10, 10, 4]  # minima innych miar
-
-datasets_from_csv = load_from_csv(paths)
-
-charts(datasets_from_csv)
-chart_silhoueete(datasets_from_csv)
-chart_measures(datasets_from_csv)
-charts_sil_best(datasets_from_csv)
-charts_sil_worst(datasets_from_csv)
-charts_other_best(datasets_from_csv)
-charts_other_worst(datasets_from_csv)
-
-plt.show()
+if __name__ == "__main__":
+    main()

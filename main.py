@@ -9,12 +9,11 @@ Created on Thu Mar 21 22:38:54 2024
 import matplotlib.pyplot as plt
 import pandas as pd
 from scipy.spatial import Voronoi, voronoi_plot_2d
-from sklearn.cluster import KMeans
+from sklearn.cluster import KMeans, DBSCAN
 from sklearn.metrics import silhouette_score, adjusted_rand_score, homogeneity_score, completeness_score, \
     v_measure_score
 
 
-# wczytywanie plików
 def load_from_csv(paths):
     return [pd.read_csv(path, sep=";", header=None) for path in paths]
 
@@ -35,8 +34,13 @@ def calculate_kmeans(dataset, n_clusters):
     return KMeans(n_clusters=n_clusters, random_state=0).fit(dataset.iloc[0:, 0:2].to_numpy())
 
 
+def dbscan(dataset, eps):
+    # todo get rid of magic number
+    return DBSCAN(eps=eps, min_samples=1)
+
+
 # todo change name of the function
-def charts(datasets):
+def charts_clusters(datasets):
     fig, ax = plt.subplots(1, 6, figsize=(30, 5))
     fig.tight_layout()
     for dataset, axis in zip(datasets, ax):
@@ -45,12 +49,30 @@ def charts(datasets):
 
 
 # todo change name of the function
-def charts_kmeans(datasets):
+def charts_kmeans_clusters(datasets):
     fig, ax = plt.subplots(1, 6, figsize=(30, 5))
     fig.tight_layout()
     for dataset, axis in zip(datasets, ax):
         kmeans = calculate_kmeans(dataset, 2)
         plot_voronoi(axis, dataset, kmeans.labels_)
+
+
+def calculate_silhouette_score(dataset, n_clusters):
+    kmeans = KMeans(n_clusters=n_clusters, random_state=0)
+    labels = kmeans.fit_predict(dataset.iloc[:, 0:2])
+    return silhouette_score(dataset.iloc[:, 0:2], labels)
+
+
+def calculate_silhouette_scores(datasets):
+    all_silhouette_scores = []
+    for dataset in datasets.values():
+        silhouette_scores = []
+        # todo get rid of magic numbers
+        for n_clusters in range(2, 12):
+            silhouette_score = calculate_silhouette_score(dataset, n_clusters)
+            silhouette_scores.append(silhouette_score)
+        all_silhouette_scores.append(silhouette_scores)
+    return all_silhouette_scores
 
 
 # todo change name of the function
@@ -60,29 +82,28 @@ def chart_silhoueete(datasets, sil_max, sil_min):
     fig.tight_layout()
 
     k_meansN_rate = []
-
-    linspace = []  # ilosc klastorw
+    linear_space = []  # ilosc klastorw
 
     for i in range(len(datasets)):  # dzialanie na 6 zbiorach
-        for k in range(2, 12):  # ustanowienie ilosci zbiorow
+        for n_clusters in range(2, 12):  # ustanowienie ilosci zbiorow
 
-            kmeans = KMeans(n_clusters=k, random_state=0)  # ustanowienie ilosci klastrow w metodzie Kmeans
+            kmeans = KMeans(n_clusters=n_clusters, random_state=0)  # ustanowienie ilosci klastrow w metodzie Kmeans
             sil = silhouette_score(datasets[i].iloc[0:, 0:2].to_numpy(),
                                    kmeans.fit_predict(datasets[i].iloc[0:, 0:2].to_numpy()))  # miara silhoueete
             k_meansN_rate.append(sil)
-            linspace.append(k - 1)
+            linear_space.append(n_clusters - 1)
 
-            if k == 2:  # czyszczenie danych z listy
+            if n_clusters == 2:  # czyszczenie danych z listy
 
                 k_meansN_rate.clear()
-                linspace.clear()
+                linear_space.clear()
 
         # selekcja minimow i maksimow
         sil_max.append(max(enumerate(k_meansN_rate), key=(abs and (lambda x: x[1])))[0] + 2)
         sil_min.append(min(enumerate(k_meansN_rate), key=(lambda x: x[1]))[0] + 2)
         # rysowanie punktow w subplots()
         ax[i].set_xlabel("n_cluster")
-        ax[i].plot(linspace, k_meansN_rate)  #
+        ax[i].plot(linear_space, k_meansN_rate)  #
 
 
 # todo change name of the function
@@ -94,11 +115,10 @@ def chart_measures(datasets):
     linspacee = []  # ilosc klastorw
 
     for i in range(len(datasets)):
-        for k in range(2, 12):
+        y_true = datasets[i].iloc[0:, 2]
 
-            y_true = datasets[i].iloc[0:, 2]
-
-            kmeans = KMeans(n_clusters=k, random_state=0)
+        for n_clusters in range(2, 12):
+            kmeans = KMeans(n_clusters=n_clusters, random_state=0)
 
             # reszta miar
             adj = adjusted_rand_score(y_true, kmeans.fit_predict(datasets[i].iloc[0:, 0:2].to_numpy()))
@@ -110,8 +130,8 @@ def chart_measures(datasets):
 
             # dodawanie miar do listy
             k_meansNN_rate.append([adj, homo, como, vbeta1, vbeta2, vbeta3])
-            linspacee.append(k - 1)
-            if k == 2:
+            linspacee.append(n_clusters - 1)
+            if n_clusters == 2:
                 k_meansNN_rate.clear()
                 linspacee.clear()
 
@@ -123,7 +143,7 @@ def chart_measures(datasets):
 
 
 # todo change name of the function
-def charts_sil(datasets, sils):
+def charts_sil_clusters(datasets, sils):
     fig, ax = plt.subplots(1, 6, figsize=(30, 5))
     fig.tight_layout()
     # todo
@@ -135,7 +155,7 @@ def charts_sil(datasets, sils):
 
 
 # todo change name of the function
-def charts_metrics(datasets, metrics):
+def charts_metrics_clusters(datasets, metrics):
     # wykresy najlepszy podzial dla reszty miar
     fig, ax = plt.subplots(1, 6, figsize=(30, 5))
     fig.tight_layout()
@@ -157,14 +177,14 @@ def main():
 
     datasets_from_csv = load_from_csv(paths)
 
-    charts(datasets_from_csv)
-    charts_kmeans(datasets_from_csv)
+    charts_clusters(datasets_from_csv)
+    charts_kmeans_clusters(datasets_from_csv)
     chart_silhoueete(datasets_from_csv, sil_max, sil_min)
     chart_measures(datasets_from_csv)
-    charts_sil(datasets_from_csv, sil_max)
-    charts_sil(datasets_from_csv, sil_min)
-    charts_metrics(datasets_from_csv, met_max)
-    charts_metrics(datasets_from_csv, met_min)
+    charts_sil_clusters(datasets_from_csv, sil_max)
+    charts_sil_clusters(datasets_from_csv, sil_min)
+    charts_metrics_clusters(datasets_from_csv, met_max)
+    charts_metrics_clusters(datasets_from_csv, met_min)
 
     plt.show()
 

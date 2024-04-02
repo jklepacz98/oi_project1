@@ -19,7 +19,8 @@ def load_from_csv(paths):
     return [pd.read_csv(path, sep=";", header=None) for path in paths]
 
 
-def plot_voronoi(ax, points, labels):
+def plot_voronoi(ax, dataset, labels):
+    points = dataset.iloc[:, 0:2].to_numpy()
     vor = Voronoi(points)
     voronoi_plot_2d(vor, ax=ax, show_vertices=False, show_points=False, show_region=True, show_points_label=False)
     for r in range(len(vor.point_region)):
@@ -27,11 +28,6 @@ def plot_voronoi(ax, points, labels):
         if not -1 in region:
             polygon = [vor.vertices[i] for i in region]
             ax.fill(*zip(*polygon), color=plt.cm.Set1(labels[r], alpha=0.5))
-
-
-def plot_kmeans_clusters(ax, dataset, kmeans):
-    labels = kmeans.labels_
-    plot_voronoi(ax, dataset.iloc[:, 0:2].to_numpy(), labels)
     ax.scatter(dataset.iloc[:, 0], dataset.iloc[:, 1], c=labels)
 
 
@@ -45,8 +41,7 @@ def charts(datasets):
     fig.tight_layout()
     for dataset, axis in zip(datasets, ax):
         labels = dataset.iloc[0:, 2]
-        points = dataset.iloc[:, 0:2].to_numpy()
-        plot_voronoi(axis, points, labels)
+        plot_voronoi(axis, dataset, labels)
 
 
 # todo change name of the function
@@ -55,14 +50,14 @@ def charts_kmeans(datasets):
     fig.tight_layout()
     for dataset, axis in zip(datasets, ax):
         kmeans = calculate_kmeans(dataset, 2)
-        plot_kmeans_clusters(axis, dataset, kmeans)
+        plot_voronoi(axis, dataset, kmeans.labels_)
 
 
 # todo change name of the function
 def chart_silhoueete(datasets, sil_max, sil_min):
     # grupa wykresów z miarą silhoueete
-    fig3, ax3 = plt.subplots(1, 6, figsize=(30, 5))
-    fig3.tight_layout()
+    fig, ax = plt.subplots(1, 6, figsize=(30, 5))
+    fig.tight_layout()
 
     k_meansN_rate = []
 
@@ -86,13 +81,12 @@ def chart_silhoueete(datasets, sil_max, sil_min):
         sil_max.append(max(enumerate(k_meansN_rate), key=(abs and (lambda x: x[1])))[0] + 2)
         sil_min.append(min(enumerate(k_meansN_rate), key=(lambda x: x[1]))[0] + 2)
         # rysowanie punktow w subplots()
-        ax3[i].set_xlabel("n_cluster")
-        ax3[i].plot(linspace, k_meansN_rate)  #
+        ax[i].set_xlabel("n_cluster")
+        ax[i].plot(linspace, k_meansN_rate)  #
 
 
 # todo change name of the function
 def chart_measures(datasets):
-    # grupa wykresów z reszta miar
     fig, ax = plt.subplots(1, 6, figsize=(30, 5))
     fig.tight_layout()
 
@@ -137,8 +131,7 @@ def charts_sil(datasets, sils):
         # kmeans = KMeans(n_clusters=sil, random_state=0).fit(datasets[i].iloc[0:, 0:2].to_numpy())
         kmeans = calculate_kmeans(dataset, sil)
         labels = kmeans.labels_
-        points = dataset.iloc[0:, 0:2].to_numpy()
-        plot_voronoi(axis, points, labels)
+        plot_voronoi(axis, dataset, labels)
 
 
 # todo change name of the function
@@ -149,7 +142,7 @@ def charts_metrics(datasets, metrics):
     # todo
     for dataset, metric, axis in zip(datasets, metrics, ax):
         kmeans = calculate_kmeans(dataset, metric)
-        plot_kmeans_clusters(axis, dataset, kmeans)
+        plot_voronoi(axis, dataset, kmeans.labels_)
 
 
 def main():

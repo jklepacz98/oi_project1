@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from scipy.spatial import Voronoi, voronoi_plot_2d
 from sklearn.cluster import KMeans, DBSCAN
-from sklearn.datasets import load_wine, load_iris, load_breast_cancer
+from sklearn.datasets import load_iris, load_wine, load_breast_cancer
 from sklearn.metrics import silhouette_score, adjusted_rand_score, homogeneity_score, completeness_score, \
     v_measure_score
 from sklearn.preprocessing import MinMaxScaler
@@ -27,13 +27,11 @@ def scale_datasets(datasets):
 
 def plot_voronoi(axis, dataset, labels):
     points = dataset.iloc[:, 0:2].to_numpy()
-    # todo
     x_min, x_max = points[:, 0].min(), points[:, 0].max()
     x_margin = abs(x_max - x_min) * 0.1
     y_min, y_max = points[:, 1].min(), points[:, 1].max()
     y_margin = abs(y_max - y_min) * 0.1
 
-    # todo
     points = np.append(points, [[999, 999], [-999, 999], [999, -999], [-999, -999]], axis=0)
     vor = Voronoi(points)
     voronoi_plot_2d(vor, ax=axis, show_vertices=False, show_points=False, show_region=True, show_points_label=False)
@@ -44,7 +42,6 @@ def plot_voronoi(axis, dataset, labels):
             axis.fill(*zip(*polygon), color=plt.cm.Set1(labels[r], alpha=0.5))
     axis.scatter(dataset.iloc[:, 0], dataset.iloc[:, 1], c=dataset.iloc[:, 2])
 
-    # todo
     axis.set_xlim(x_min - x_margin, x_max + x_margin)
     axis.set_ylim(y_min - y_margin, y_max + y_margin)
 
@@ -54,7 +51,6 @@ def calculate_kmeans(dataset, n_clusters):
 
 
 def calculate_dbscan(dataset, eps):
-    # todo get rid of magic number
     return DBSCAN(eps=eps, min_samples=1).fit(dataset.iloc[0:, 0:2].to_numpy())
 
 
@@ -65,12 +61,9 @@ def charts_clusters(datasets, cluster_results):
         plot_voronoi(axis, dataset, cluster_result.labels_)
 
 
-# todo change name of the function
 def charts_clusters_real(datasets):
     fig, ax = plt.subplots(1, 6, figsize=(30, 5))
-    # todo
     fig.tight_layout()
-    # todo
     fig.subplots_adjust(top=0.9)
     plt.suptitle('Clusters real', fontsize=20)
     for dataset, axis in zip(datasets, ax):
@@ -78,7 +71,6 @@ def charts_clusters_real(datasets):
         plot_voronoi(axis, dataset, labels)
 
 
-# todo change name of the function
 def charts_kmeans_clusters(datasets):
     fig, ax = plt.subplots(1, 6, figsize=(30, 5))
     fig.tight_layout()
@@ -175,7 +167,6 @@ def calculate_min_max_silhouette_indices(all_silhouettes):
     return sil_min_indicies, sil_max_indicies
 
 
-# todo change name
 def calculate_metrics(dataset, cluster_results):
     y_true = dataset.iloc[0:, 2]
     adj = adjusted_rand_score(y_true, cluster_results.fit_predict(dataset.iloc[0:, 0:2].to_numpy()))
@@ -197,7 +188,6 @@ def calculate_metrics2(y_true, dataset, cluster_results):
     return [adj, homo, como, vbeta1, vbeta2, vbeta3]
 
 
-# todo change name of the function
 def chart_kmeans_measures(datasets, n_clusters_list):
     fig, ax = plt.subplots(1, 6, figsize=(30, 5))
     fig.tight_layout()
@@ -238,7 +228,6 @@ def chart_dbscan_measures(datasets, eps_list, all_cluster_counts):
             axis.text(eps, 0, claster_counts, ha='center', va='bottom', transform=axis.transAxes)
 
 
-# todo change name of the function
 def charts_clusters_kmeans_silhouette(datasets, sils):
     fig, ax = plt.subplots(1, 6, figsize=(30, 5))
     fig.tight_layout()
@@ -248,11 +237,9 @@ def charts_clusters_kmeans_silhouette(datasets, sils):
         plot_voronoi(axis, dataset, labels)
 
 
-# todo change name of the function
 def charts_kmeans_metrics_clusters(datasets, metrics):
     fig, ax = plt.subplots(1, 6, figsize=(30, 5))
     fig.tight_layout()
-    # todo
     for dataset, metric, axis in zip(datasets, metrics, ax):
         kmeans = calculate_kmeans(dataset, metric)
         plot_voronoi(axis, dataset, kmeans.labels_)
@@ -261,7 +248,6 @@ def charts_kmeans_metrics_clusters(datasets, metrics):
 def charts_clusters_dbscan_silhouette(datasets, sils):
     fig, ax = plt.subplots(1, 6, figsize=(30, 5))
     fig.tight_layout()
-    # todo
     for dataset, sil, axis in zip(datasets, sils, ax):
         dbscan = calculate_dbscan(dataset, sil)
         labels = dbscan.labels_
@@ -278,47 +264,48 @@ def main():
     dbscan_met_min = [0.05, 0.95, 0.55, 0.05, 0.05, 0.95]
 
     n_clusters_list = [n_clusters for n_clusters in range(2, 12)]
-    # eps_list = [x / 100 for x in range(5, 100, 5)]
-    eps_list = [x / 100 for x in range(20, 500, 20)]
-    # eps_list = [x / 100 for x in range(50, 1500, 100)]
+    eps_list = [x / 100 for x in range(5, 100, 5)]
+    eps_list_iris = [x / 100 for x in range(20, 500, 20)]
+    eps_list_wine = [x / 100 for x in range(50, 1500, 100)]
+    eps_list_breast_cancer = [x / 100 for x in range(50, 1500, 100)]
 
     iris = load_iris()
-    chart_from_sklearn_dataset(iris, n_clusters_list, eps_list)
+    chart_from_sklearn_dataset(iris, n_clusters_list, eps_list_iris)
     wine = load_wine()
-    # chart_from_sklearn_dataset(wine, n_clusters_list, eps_list)
+    chart_from_sklearn_dataset(wine, n_clusters_list, eps_list_wine)
     breast_cancer = load_breast_cancer()
-    # chart_from_sklearn_dataset(breast_cancer, n_clusters_list, eps_list)
+    chart_from_sklearn_dataset(breast_cancer, n_clusters_list, eps_list_breast_cancer)
 
-    # datasets_from_csv = load_from_csv(paths)
-    # datasets_normalized = scale_datasets(datasets_from_csv)
-    #
-    # charts_clusters_real(datasets_normalized)
-    #
-    # kmeans_all_silhouettes = calculate_kmeans_silhouette_scores(datasets_normalized, n_clusters_list)
-    # kmeans_sil_min_indices, kmeans_sil_max_indices = calculate_min_max_silhouette_indices(kmeans_all_silhouettes)
-    # kmeans_sil_min = [n_clusters_list[i] for i in kmeans_sil_min_indices]
-    # kmeans_sil_max = [n_clusters_list[i] for i in kmeans_sil_max_indices]
-    #
-    # charts_kmeans_silhouette(kmeans_all_silhouettes, n_clusters_list)
-    # charts_clusters_kmeans_silhouette(datasets_normalized, kmeans_sil_min)
-    # charts_clusters_kmeans_silhouette(datasets_normalized, kmeans_sil_max)
-    #
-    # chart_kmeans_measures(datasets_normalized, n_clusters_list)
-    # charts_kmeans_metrics_clusters(datasets_normalized, kmeans_met_min)
-    # charts_kmeans_metrics_clusters(datasets_normalized, kmeans_met_max)
-    #
-    # dbscan_all_silhouettes, all_cluster_counts = calculate_dbscan_silhouettes(datasets_normalized, eps_list)
-    # dbscan_sil_min_indices, dbscan_sil_max_indices = calculate_min_max_silhouette_indices(dbscan_all_silhouettes)
-    # dbscan_sil_min = [eps_list[i] for i in dbscan_sil_min_indices]
-    # dbscan_sil_max = [eps_list[i] for i in dbscan_sil_max_indices]
-    #
-    # charts_dbscan_silhouette(dbscan_all_silhouettes, eps_list, all_cluster_counts)
-    # charts_clusters_dbscan_silhouette(datasets_normalized, dbscan_sil_min)
-    # charts_clusters_dbscan_silhouette(datasets_normalized, dbscan_sil_max)
-    #
-    # chart_dbscan_measures(datasets_normalized, eps_list, all_cluster_counts)
-    # charts_clusters_dbscan_silhouette(datasets_normalized, dbscan_met_min)
-    # charts_clusters_dbscan_silhouette(datasets_normalized, dbscan_met_max)
+    datasets_from_csv = load_from_csv(paths)
+    datasets_normalized = scale_datasets(datasets_from_csv)
+
+    charts_clusters_real(datasets_normalized)
+
+    kmeans_all_silhouettes = calculate_kmeans_silhouette_scores(datasets_normalized, n_clusters_list)
+    kmeans_sil_min_indices, kmeans_sil_max_indices = calculate_min_max_silhouette_indices(kmeans_all_silhouettes)
+    kmeans_sil_min = [n_clusters_list[i] for i in kmeans_sil_min_indices]
+    kmeans_sil_max = [n_clusters_list[i] for i in kmeans_sil_max_indices]
+
+    charts_kmeans_silhouette(kmeans_all_silhouettes, n_clusters_list)
+    charts_clusters_kmeans_silhouette(datasets_normalized, kmeans_sil_min)
+    charts_clusters_kmeans_silhouette(datasets_normalized, kmeans_sil_max)
+
+    chart_kmeans_measures(datasets_normalized, n_clusters_list)
+    charts_kmeans_metrics_clusters(datasets_normalized, kmeans_met_min)
+    charts_kmeans_metrics_clusters(datasets_normalized, kmeans_met_max)
+
+    dbscan_all_silhouettes, all_cluster_counts = calculate_dbscan_silhouettes(datasets_normalized, eps_list)
+    dbscan_sil_min_indices, dbscan_sil_max_indices = calculate_min_max_silhouette_indices(dbscan_all_silhouettes)
+    dbscan_sil_min = [eps_list[i] for i in dbscan_sil_min_indices]
+    dbscan_sil_max = [eps_list[i] for i in dbscan_sil_max_indices]
+
+    charts_dbscan_silhouette(dbscan_all_silhouettes, eps_list, all_cluster_counts)
+    charts_clusters_dbscan_silhouette(datasets_normalized, dbscan_sil_min)
+    charts_clusters_dbscan_silhouette(datasets_normalized, dbscan_sil_max)
+
+    chart_dbscan_measures(datasets_normalized, eps_list, all_cluster_counts)
+    charts_clusters_dbscan_silhouette(datasets_normalized, dbscan_met_min)
+    charts_clusters_dbscan_silhouette(datasets_normalized, dbscan_met_max)
 
     plt.show()
 
@@ -385,7 +372,6 @@ def chart_from_sklearn_dataset(dataset, n_clusters_list, eps_list):
         ax[3].axvline(x=eps, color='gray', linestyle='--', alpha=0.5)
 
     for n_clusters, eps in zip(n_clusters_dbscan, eps_list):
-        print(eps, n_clusters)
         x = eps / max(eps_list)
         ax[3].text(x, 0, n_clusters, ha='center', va='bottom', transform=ax[3].transAxes)
 

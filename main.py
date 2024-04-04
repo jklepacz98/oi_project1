@@ -289,47 +289,47 @@ def main():
     dbscan_met_min = [0.05, 0.95, 0.55, 0.05, 0.05, 0.95]
 
     n_clusters_list = [n_clusters for n_clusters in range(2, 12)]
-    # eps_list = [x / 100 for x in range(5, 100, 5)]
+    eps_list = [x / 100 for x in range(5, 100, 5)]
     eps_list = [x / 100 for x in range(20, 500, 20)]
-    # eps_list = [x / 100 for x in range(40, 1000, 40)]
+    eps_list = [x / 100 for x in range(40, 1000, 40)]
 
     iris = load_iris()
     chart_from_sklearn_dataset(iris, n_clusters_list, eps_list)
     wine = load_wine()
-    # chart_from_sklearn_dataset(wine, n_clusters_list, eps_list)
+    chart_from_sklearn_dataset(wine, n_clusters_list, eps_list)
     breast_cancer = load_breast_cancer()
-    # chart_from_sklearn_dataset(breast_cancer, n_clusters_list, eps_list)
+    chart_from_sklearn_dataset(breast_cancer, n_clusters_list, eps_list)
 
-    # datasets_from_csv = load_from_csv(paths)
-    # datasets_normalized = scale_datasets(datasets_from_csv)
-    #
-    # charts_clusters_real(datasets_normalized)
-    #
-    # kmeans_all_silhouettes = calculate_kmeans_silhouette_scores(datasets_normalized, n_clusters_list)
-    # kmeans_sil_min_indices, kmeans_sil_max_indices = calculate_min_max_silhouette_indices(kmeans_all_silhouettes)
-    # kmeans_sil_min = [n_clusters_list[i] for i in kmeans_sil_min_indices]
-    # kmeans_sil_max = [n_clusters_list[i] for i in kmeans_sil_max_indices]
-    #
-    # charts_kmeans_silhouette(kmeans_all_silhouettes, n_clusters_list)
-    # charts_clusters_kmeans_silhouette(datasets_normalized, kmeans_sil_min)
-    # charts_clusters_kmeans_silhouette(datasets_normalized, kmeans_sil_max)
-    #
-    # chart_kmeans_measures(datasets_normalized, n_clusters_list)
-    # charts_kmeans_metrics_clusters(datasets_normalized, kmeans_met_min)
-    # charts_kmeans_metrics_clusters(datasets_normalized, kmeans_met_max)
-    #
-    # dbscan_all_silhouettes, all_cluster_counts = calculate_dbscan_silhouettes(datasets_normalized, eps_list)
-    # dbscan_sil_min_indices, dbscan_sil_max_indices = calculate_min_max_silhouette_indices(dbscan_all_silhouettes)
-    # dbscan_sil_min = [eps_list[i] for i in dbscan_sil_min_indices]
-    # dbscan_sil_max = [eps_list[i] for i in dbscan_sil_max_indices]
-    #
-    # charts_dbscan_silhouette(dbscan_all_silhouettes, eps_list, all_cluster_counts)
-    # charts_clusters_dbscan_silhouette(datasets_normalized, dbscan_sil_min)
-    # charts_clusters_dbscan_silhouette(datasets_normalized, dbscan_sil_max)
-    #
-    # chart_dbscan_measures(datasets_normalized, eps_list, all_cluster_counts)
-    # charts_clusters_dbscan_silhouette(datasets_normalized, dbscan_met_min)
-    # charts_clusters_dbscan_silhouette(datasets_normalized, dbscan_met_max)
+    datasets_from_csv = load_from_csv(paths)
+    datasets_normalized = scale_datasets(datasets_from_csv)
+
+    charts_clusters_real(datasets_normalized)
+
+    kmeans_all_silhouettes = calculate_kmeans_silhouette_scores(datasets_normalized, n_clusters_list)
+    kmeans_sil_min_indices, kmeans_sil_max_indices = calculate_min_max_silhouette_indices(kmeans_all_silhouettes)
+    kmeans_sil_min = [n_clusters_list[i] for i in kmeans_sil_min_indices]
+    kmeans_sil_max = [n_clusters_list[i] for i in kmeans_sil_max_indices]
+
+    charts_kmeans_silhouette(kmeans_all_silhouettes, n_clusters_list)
+    charts_clusters_kmeans_silhouette(datasets_normalized, kmeans_sil_min)
+    charts_clusters_kmeans_silhouette(datasets_normalized, kmeans_sil_max)
+
+    chart_kmeans_measures(datasets_normalized, n_clusters_list)
+    charts_kmeans_metrics_clusters(datasets_normalized, kmeans_met_min)
+    charts_kmeans_metrics_clusters(datasets_normalized, kmeans_met_max)
+
+    dbscan_all_silhouettes, all_cluster_counts = calculate_dbscan_silhouettes(datasets_normalized, eps_list)
+    dbscan_sil_min_indices, dbscan_sil_max_indices = calculate_min_max_silhouette_indices(dbscan_all_silhouettes)
+    dbscan_sil_min = [eps_list[i] for i in dbscan_sil_min_indices]
+    dbscan_sil_max = [eps_list[i] for i in dbscan_sil_max_indices]
+
+    charts_dbscan_silhouette(dbscan_all_silhouettes, eps_list, all_cluster_counts)
+    charts_clusters_dbscan_silhouette(datasets_normalized, dbscan_sil_min)
+    charts_clusters_dbscan_silhouette(datasets_normalized, dbscan_sil_max)
+
+    chart_dbscan_measures(datasets_normalized, eps_list, all_cluster_counts)
+    charts_clusters_dbscan_silhouette(datasets_normalized, dbscan_met_min)
+    charts_clusters_dbscan_silhouette(datasets_normalized, dbscan_met_max)
 
     plt.show()
 

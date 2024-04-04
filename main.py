@@ -130,8 +130,6 @@ def charts_dbscan_silhouette(all_silhouettes, eps_list, all_cluster_counts):
     fig.tight_layout()
     fig.subplots_adjust(bottom=0.1)
     for silhouettes, axis, cluster_counts in zip(all_silhouettes, ax, all_cluster_counts):
-        top, bottom = axis.get_ylim()
-        print(top, bottom)
         axis.plot(eps_list, silhouettes)
         axis.set_xlabel("eps")
 
@@ -172,7 +170,6 @@ def calculate_dbscan_silhouettes(datasets, eps_list):
             silhouettes.append(silhouette)
         all_silhouettes.append(silhouettes)
         all_cluster_counts.append(cluster_counts)
-    # todo
     return all_silhouettes, all_cluster_counts
 
 
@@ -290,15 +287,15 @@ def main():
 
     n_clusters_list = [n_clusters for n_clusters in range(2, 12)]
     # eps_list = [x / 100 for x in range(5, 100, 5)]
-    eps_list = [x / 100 for x in range(20, 500, 20)]
-    # eps_list = [x / 100 for x in range(40, 1000, 40)]
+    # eps_list = [x / 100 for x in range(20, 500, 20)]
+    eps_list = [x / 100 for x in range(50, 1500, 100)]
 
     iris = load_iris()
-    chart_from_sklearn_dataset(iris, n_clusters_list, eps_list)
+    # chart_from_sklearn_dataset(iris, n_clusters_list, eps_list)
     wine = load_wine()
     # chart_from_sklearn_dataset(wine, n_clusters_list, eps_list)
     breast_cancer = load_breast_cancer()
-    # chart_from_sklearn_dataset(breast_cancer, n_clusters_list, eps_list)
+    chart_from_sklearn_dataset(breast_cancer, n_clusters_list, eps_list)
 
     # datasets_from_csv = load_from_csv(paths)
     # datasets_normalized = scale_datasets(datasets_from_csv)
@@ -338,11 +335,8 @@ def chart_from_sklearn_dataset(dataset, n_clusters_list, eps_list):
     X_data = dataset.data
     Y_target = dataset.target
 
-    print(X_data)
     scaler = MinMaxScaler(feature_range=(-5, 5))
     X_scaled = scaler.fit_transform(X_data)
-
-    print("X_scaled: ", X_scaled)
 
     sils_kmeans = []
     metrics_kmeans = []
@@ -355,51 +349,51 @@ def chart_from_sklearn_dataset(dataset, n_clusters_list, eps_list):
 
     sils_dbscan = []
     metrics_dbscan = []
+    n_clusters_dbscan = []
     for eps in eps_list:
         dbscan = DBSCAN(eps=eps, min_samples=1)
         metrics = calculate_metrics2(Y_target, X_scaled, dbscan)
         metrics_dbscan.append(metrics)
         y_dbscan = dbscan.fit_predict(X_scaled)
         n_clusters = len(set(y_dbscan)) - (1 if -1 in y_dbscan else 0)
+        n_clusters_dbscan.append(n_clusters)
         if n_clusters < 2 or len(y_dbscan) <= n_clusters:
             sils_dbscan.append(float('nan'))
         else:
-            print("n_clusters: ", n_clusters)
-            print("len(X_scaled):", len(X_scaled))
-            print("len(y_dbscan):", len(y_dbscan))
             sils_dbscan.append(silhouette_score(X_scaled, y_dbscan))
 
-    fig1, ax1 = plt.subplots(figsize=(5, 5))
-    fig1.tight_layout()
-    ax1.plot(n_clusters_list, sils_kmeans)
-    ax1.set_xlabel("n_clusters")
+    fig, ax = plt.subplots(1, 4, figsize=(20, 5))
+    fig.tight_layout()
+
+    ax[0].plot(n_clusters_list, sils_kmeans)
+    ax[0].set_xlabel("n_clusters")
     for n_clusters in n_clusters_list:
-        ax1.axvline(x=n_clusters, color='gray', linestyle='--', alpha=0.5)
+        ax[0].axvline(x=n_clusters, color='gray', linestyle='--', alpha=0.5)
 
-    fig2, ax2 = plt.subplots(figsize=(5, 5))
-    fig2.tight_layout()
-    ax2.plot(eps_list, sils_dbscan)
-    ax2.set_xlabel("eps")
-    for eps in eps_list:
-        ax2.axvline(x=eps, color='gray', linestyle='--', alpha=0.5)
-
-    fig3, ax3 = plt.subplots(figsize=(5, 5))
-    fig3.tight_layout()
-    ax3.plot(n_clusters_list, metrics_kmeans)
-    ax3.set_xlabel("n_clusters")
-    ax3.legend(["adjusted rand", "homogeneity", "completeness", "v-measure beta=0.5", "v-measure beta=1",
-                "v-measure beta=2"])
+    ax[1].plot(n_clusters_list, metrics_kmeans)
+    ax[1].set_xlabel("n_clusters")
+    ax[1].legend(["adjusted rand", "homogeneity", "completeness", "v-measure beta=0.5", "v-measure beta=1",
+                  "v-measure beta=2"])
     for n_clusters in n_clusters_list:
-        ax3.axvline(x=n_clusters, color='gray', linestyle='--', alpha=0.5)
+        ax[1].axvline(x=n_clusters, color='gray', linestyle='--', alpha=0.5)
 
-    fig4, ax4 = plt.subplots(figsize=(5, 5))
-    fig4.tight_layout()
-    ax4.plot(eps_list, metrics_dbscan)
-    ax4.set_xlabel("eps")
-    ax4.legend(["adjusted rand", "homogeneity", "completeness", "v-measure beta=0.5", "v-measure beta=1",
-                "v-measure beta=2"])
+    ax[2].plot(eps_list, sils_dbscan)
+    ax[2].set_xlabel("eps")
     for eps in eps_list:
-        ax4.axvline(x=eps, color='gray', linestyle='--', alpha=0.5)
+        ax[2].axvline(x=eps, color='gray', linestyle='--', alpha=0.5)
+    for n_clusters, eps in zip(n_clusters_dbscan, eps_list):
+        ax[2].text(eps / 15, 0, n_clusters, ha='center', va='bottom', transform=ax[2].transAxes)
+
+    ax[3].plot(eps_list, metrics_dbscan)
+    ax[3].set_xlabel("eps")
+    ax[3].legend(["adjusted rand", "homogeneity", "completeness", "v-measure beta=0.5", "v-measure beta=1",
+                  "v-measure beta=2"])
+    for eps in eps_list:
+        ax[3].axvline(x=eps, color='gray', linestyle='--', alpha=0.5)
+
+    for n_clusters, eps in zip(n_clusters_dbscan, eps_list):
+        print(eps, n_clusters)
+        ax[3].text(eps / 15, 0, n_clusters, ha='center', va='bottom', transform=ax[3].transAxes)
 
 
 if __name__ == "__main__":

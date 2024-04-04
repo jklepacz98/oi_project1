@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Mar 21 22:38:54 2024
-
-@author: adrian kuba
-"""
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -287,15 +279,15 @@ def main():
 
     n_clusters_list = [n_clusters for n_clusters in range(2, 12)]
     # eps_list = [x / 100 for x in range(5, 100, 5)]
-    # eps_list = [x / 100 for x in range(20, 500, 20)]
-    eps_list = [x / 100 for x in range(50, 1500, 100)]
+    eps_list = [x / 100 for x in range(20, 500, 20)]
+    # eps_list = [x / 100 for x in range(50, 1500, 100)]
 
     iris = load_iris()
-    # chart_from_sklearn_dataset(iris, n_clusters_list, eps_list)
+    chart_from_sklearn_dataset(iris, n_clusters_list, eps_list)
     wine = load_wine()
     # chart_from_sklearn_dataset(wine, n_clusters_list, eps_list)
     breast_cancer = load_breast_cancer()
-    chart_from_sklearn_dataset(breast_cancer, n_clusters_list, eps_list)
+    # chart_from_sklearn_dataset(breast_cancer, n_clusters_list, eps_list)
 
     # datasets_from_csv = load_from_csv(paths)
     # datasets_normalized = scale_datasets(datasets_from_csv)
@@ -382,7 +374,8 @@ def chart_from_sklearn_dataset(dataset, n_clusters_list, eps_list):
     for eps in eps_list:
         ax[2].axvline(x=eps, color='gray', linestyle='--', alpha=0.5)
     for n_clusters, eps in zip(n_clusters_dbscan, eps_list):
-        ax[2].text(eps / 15, 0, n_clusters, ha='center', va='bottom', transform=ax[2].transAxes)
+        x = eps / max(eps_list)
+        ax[2].text(x, 0, n_clusters, ha='center', va='bottom', transform=ax[2].transAxes)
 
     ax[3].plot(eps_list, metrics_dbscan)
     ax[3].set_xlabel("eps")
@@ -393,7 +386,8 @@ def chart_from_sklearn_dataset(dataset, n_clusters_list, eps_list):
 
     for n_clusters, eps in zip(n_clusters_dbscan, eps_list):
         print(eps, n_clusters)
-        ax[3].text(eps / 15, 0, n_clusters, ha='center', va='bottom', transform=ax[3].transAxes)
+        x = eps / max(eps_list)
+        ax[3].text(x, 0, n_clusters, ha='center', va='bottom', transform=ax[3].transAxes)
 
 
 if __name__ == "__main__":

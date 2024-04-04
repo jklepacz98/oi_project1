@@ -13,10 +13,23 @@ from scipy.spatial import Voronoi, voronoi_plot_2d
 from sklearn.cluster import KMeans, DBSCAN
 from sklearn.metrics import silhouette_score, adjusted_rand_score, homogeneity_score, completeness_score, \
     v_measure_score
+from sklearn.preprocessing import MinMaxScaler
 
 
 def load_from_csv(paths):
     return [pd.read_csv(path, sep=";", header=None) for path in paths]
+
+
+def scale_datasets(datasets):
+    scaled_datasets = []
+    scaler = MinMaxScaler(feature_range=(-5, 5))
+    for dataset in datasets:
+        scaled_data = scaler.fit_transform(dataset.iloc[:, 0:2])
+        scaled_df = pd.DataFrame(scaled_data, columns=dataset.columns[0:2])
+        if dataset.shape[1] > 2:
+            scaled_df[dataset.columns[2]] = dataset.iloc[:, 2].values
+        scaled_datasets.append(scaled_df)
+    return scaled_datasets
 
 
 def plot_voronoi(axis, dataset, labels):
@@ -52,14 +65,21 @@ def calculate_dbscan(dataset, eps):
     return DBSCAN(eps=eps, min_samples=1).fit(dataset.iloc[0:, 0:2].to_numpy())
 
 
+def charts_clusters(datasets, cluster_results):
+    fig, ax = plt.subplots(1, 6, figsize=(30, 5))
+    fig.tight_layout()
+    for dataset, axis, cluster_result in zip(datasets, ax, cluster_results):
+        plot_voronoi(axis, dataset, cluster_result.labels_)
+
+
 # todo change name of the function
-def charts_clusters(datasets):
+def charts_clusters_real(datasets):
     fig, ax = plt.subplots(1, 6, figsize=(30, 5))
     # todo
     fig.tight_layout()
     # todo
     fig.subplots_adjust(top=0.9)
-    plt.suptitle('Clustering', fontsize=20)
+    plt.suptitle('Clusters real', fontsize=20)
     for dataset, axis in zip(datasets, ax):
         labels = dataset.iloc[0:, 2]
         plot_voronoi(axis, dataset, labels)
@@ -69,114 +89,146 @@ def charts_clusters(datasets):
 def charts_kmeans_clusters(datasets):
     fig, ax = plt.subplots(1, 6, figsize=(30, 5))
     fig.tight_layout()
+    fig.subplots_adjust(top=0.9)
+    plt.suptitle('Clustering kmeans', fontsize=20)
     for dataset, axis in zip(datasets, ax):
         kmeans = calculate_kmeans(dataset, 2)
         plot_voronoi(axis, dataset, kmeans.labels_)
 
 
-def charts_dbscan_clusters(datasets):
-    fig, ax = plt.subplots(1, 6, figsize=(30, 5))
-    fig.tight_layout()
-    for dataset, axis in zip(datasets, ax):
-        dbscan = calculate_dbscan(dataset=dataset, eps=0.5)
-        plot_voronoi(axis, dataset, dbscan.labels_)
-
-
-def calculate_silhouette_score(dataset, n_clusters):
+def calculate_kmeans_silhouette_score(dataset, n_clusters):
     kmeans = KMeans(n_clusters=n_clusters, random_state=0)
     labels = kmeans.fit_predict(dataset.iloc[:, 0:2])
     return silhouette_score(dataset.iloc[:, 0:2], labels)
 
 
-def calculate_silhouette_scores(datasets, n_clusters_list):
+def calculate_kmeans_silhouette_scores(datasets, n_clusters_list):
     all_silhouette_scores = []
-    for dataset in datasets.values():
+    for dataset in datasets:
         silhouette_scores = []
         for n_clusters in n_clusters_list:
-            silhouette_score = calculate_silhouette_score(dataset, n_clusters)
+            silhouette_score = calculate_kmeans_silhouette_score(dataset, n_clusters)
             silhouette_scores.append(silhouette_score)
         all_silhouette_scores.append(silhouette_scores)
     return all_silhouette_scores
 
 
-# todo change name of the function
-def chart_silhoueete(datasets, n_clusters_list, sil_max, sil_min):
-    # grupa wykresów z miarą silhoueete
+def charts_silhouette(silhouettes, x_labels):
     fig, ax = plt.subplots(1, 6, figsize=(30, 5))
     fig.tight_layout()
+    for silhouette, axis in zip(silhouettes, ax):
+        axis.plot(x_labels, silhouette)
+        for x_label in x_labels:
+            axis.axvline(x=x_label, color='gray', linestyle='--', alpha=0.5)
 
-    k_meansN_rate = []
-    linear_space = []  # ilosc klastorw
 
-    for i in range(len(datasets)):  # dzialanie na 6 zbiorach
-        for n_clusters in n_clusters_list:  # ustanowienie ilosci zbiorow
+def calculate_kmeans_silhouettes(datasets, n_clusters_list):
+    all_silhouettes = []
+    for dataset in datasets:
+        silhouettes = []
+        for n_clusters in n_clusters_list:
+            kmeans = KMeans(n_clusters=n_clusters, random_state=0)
+            silhouette = silhouette_score(dataset.iloc[0:, 0:2].to_numpy(),
+                                          kmeans.fit_predict(dataset.iloc[0:, 0:2].to_numpy()))
+            silhouettes.append(silhouette)
+        all_silhouettes.append(silhouettes)
+    return all_silhouettes
 
-            kmeans = KMeans(n_clusters=n_clusters, random_state=0)  # ustanowienie ilosci klastrow w metodzie Kmeans
-            sil = silhouette_score(datasets[i].iloc[0:, 0:2].to_numpy(),
-                                   kmeans.fit_predict(datasets[i].iloc[0:, 0:2].to_numpy()))  # miara silhoueete
-            k_meansN_rate.append(sil)
-            linear_space.append(n_clusters - 1)
 
-            if n_clusters == 2:  # czyszczenie danych z listy
+def calculate_dbscan_silhouettes(datasets, eps_list):
+    all_silhouettes = []
+    all_cluster_counts = []
+    for dataset in datasets:
+        silhouettes = []
+        cluster_counts = []
+        for eps in eps_list:
+            dbscan = DBSCAN(eps=eps, min_samples=1)
+            labels = dbscan.fit_predict(dataset.iloc[0:, 0:2].to_numpy())
+            n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
+            cluster_counts.append(n_clusters)
+            if n_clusters < 2:
+                silhouette = float('nan')
+            else:
+                silhouette = silhouette_score(dataset.iloc[0:, 0:2].to_numpy(), labels)
+            silhouettes.append(silhouette)
+        all_silhouettes.append(silhouettes)
+        all_cluster_counts.append(cluster_counts)
+    # todo
+    return all_silhouettes, all_cluster_counts
 
-                k_meansN_rate.clear()
-                linear_space.clear()
 
-        # selekcja minimow i maksimow
-        sil_max.append(max(enumerate(k_meansN_rate), key=(abs and (lambda x: x[1])))[0] + 2)
-        sil_min.append(min(enumerate(k_meansN_rate), key=(lambda x: x[1]))[0] + 2)
-        # rysowanie punktow w subplots()
-        ax[i].set_xlabel("n_cluster")
-        ax[i].plot(linear_space, k_meansN_rate)  #
+# change name key
+def calculate_min_max_silhouette_indices(all_silhouettes):
+    sil_min_indicies = []
+    sil_max_indicies = []
+    for silhouettes in all_silhouettes:
+        sil_min_indicies.append(min(enumerate(silhouettes), key=(lambda x: x[1]))[0])
+        sil_max_indicies.append(max(enumerate(silhouettes), key=(abs and (lambda x: x[1])))[0])
+    return sil_min_indicies, sil_max_indicies
+
+
+# todo change name
+def calculate_metrics(dataset, cluster_results):
+    y_true = dataset.iloc[0:, 2]
+    adj = adjusted_rand_score(y_true, cluster_results.fit_predict(dataset.iloc[0:, 0:2].to_numpy()))
+    homo = homogeneity_score(y_true, cluster_results.fit_predict(dataset.iloc[0:, 0:2].to_numpy()))
+    como = completeness_score(y_true, cluster_results.fit_predict(dataset.iloc[0:, 0:2].to_numpy()))
+    vbeta1 = v_measure_score(y_true, cluster_results.fit_predict(dataset.iloc[0:, 0:2].to_numpy()), beta=0.5)
+    vbeta2 = v_measure_score(y_true, cluster_results.fit_predict(dataset.iloc[0:, 0:2].to_numpy()), beta=1)
+    vbeta3 = v_measure_score(y_true, cluster_results.fit_predict(dataset.iloc[0:, 0:2].to_numpy()), beta=2)
+    return [adj, homo, como, vbeta1, vbeta2, vbeta3]
 
 
 # todo change name of the function
-def chart_measures(datasets, n_clusters_list):
+def chart_kmeans_measures(datasets, n_clusters_list):
+    fig, ax = plt.subplots(1, 6, figsize=(30, 5))
+    fig.tight_layout()
+    for dataset, axis in zip(datasets, ax):
+        k_meansNN_rate = []  # wartosci miary silhouette
+        for n_clusters in n_clusters_list:
+            kmeans = KMeans(n_clusters=n_clusters, random_state=0)
+            metrics = calculate_metrics(dataset, kmeans)
+            k_meansNN_rate.append(metrics)
+        axis.plot(n_clusters_list, k_meansNN_rate)  #
+        axis.set_xlabel("n_cluster")
+        axis.legend(["adjusted rand", "homogeneity", "completeness", "v-measure beta=0.5", "v-measure beta=1",
+                     "v-measure beta=2"])
+        for n_clusters in n_clusters_list:
+            axis.axvline(x=n_clusters, color='gray', linestyle='--', alpha=0.5)
+
+
+def chart_dbscan_measures(datasets, eps_list):
     fig, ax = plt.subplots(1, 6, figsize=(30, 5))
     fig.tight_layout()
 
     for dataset, axis in zip(datasets, ax):
-        y_true = dataset.iloc[0:, 2]
-        k_meansNN_rate = []  # wartosci miary silhoueete
-        linspacee = []
-        for n_clusters in n_clusters_list:
-            kmeans = KMeans(n_clusters=n_clusters, random_state=0)
 
-            # reszta miar
-            adj = adjusted_rand_score(y_true, kmeans.fit_predict(dataset.iloc[0:, 0:2].to_numpy()))
-            homo = homogeneity_score(y_true, kmeans.fit_predict(dataset.iloc[0:, 0:2].to_numpy()))
-            como = completeness_score(y_true, kmeans.fit_predict(dataset.iloc[0:, 0:2].to_numpy()))
-            vbeta1 = v_measure_score(y_true, kmeans.fit_predict(dataset.iloc[0:, 0:2].to_numpy()), beta=0.5)
-            vbeta2 = v_measure_score(y_true, kmeans.fit_predict(dataset.iloc[0:, 0:2].to_numpy()), beta=1)
-            vbeta3 = v_measure_score(y_true, kmeans.fit_predict(dataset.iloc[0:, 0:2].to_numpy()), beta=2)
+        dbscan_NN_rate = []  # wartosci miary silhouette
+        for eps in eps_list:
+            dbscan = calculate_dbscan(dataset, eps)
+            metrics = calculate_metrics(dataset, dbscan)
+            dbscan_NN_rate.append(metrics)
 
-            # dodawanie miar do listy
-            k_meansNN_rate.append([adj, homo, como, vbeta1, vbeta2, vbeta3])
-            # todo understand why here is -1 and get rid of it
-            linspacee.append(n_clusters - 1)
-
-        # rysowanie od razu 6 przebiegów na każdym pojedynczym wykresie
-        axis.plot(linspacee, k_meansNN_rate)  #
-        axis.set_xlabel("n_cluster")
+        axis.plot(eps_list, dbscan_NN_rate)
+        axis.set_xlabel("eps")
         axis.legend(["adjusted rand", "homogeneity", "completeness", "v-measure beta=0.5", "v-measure beta=1",
                      "v-measure beta=2"])
+        for eps in eps_list:
+            axis.axvline(x=eps, color='gray', linestyle='--', alpha=0.5)
 
 
 # todo change name of the function
-def charts_sil_clusters(datasets, sils):
+def charts_clusters_kmeans_silhouette(datasets, sils):
     fig, ax = plt.subplots(1, 6, figsize=(30, 5))
     fig.tight_layout()
-    # todo
     for dataset, sil, axis in zip(datasets, sils, ax):
-        # kmeans = KMeans(n_clusters=sil, random_state=0).fit(datasets[i].iloc[0:, 0:2].to_numpy())
         kmeans = calculate_kmeans(dataset, sil)
         labels = kmeans.labels_
         plot_voronoi(axis, dataset, labels)
 
 
 # todo change name of the function
-def charts_metrics_clusters(datasets, metrics):
-    # wykresy najlepszy podzial dla reszty miar
+def charts_kmeans_metrics_clusters(datasets, metrics):
     fig, ax = plt.subplots(1, 6, figsize=(30, 5))
     fig.tight_layout()
     # todo
@@ -185,33 +237,58 @@ def charts_metrics_clusters(datasets, metrics):
         plot_voronoi(axis, dataset, kmeans.labels_)
 
 
+def charts_clusters_dbscan_silhouette(datasets, sils):
+    fig, ax = plt.subplots(1, 6, figsize=(30, 5))
+    fig.tight_layout()
+    # todo
+    for dataset, sil, axis in zip(datasets, sils, ax):
+        dbscan = calculate_dbscan(dataset, sil)
+        labels = dbscan.labels_
+        plot_voronoi(axis, dataset, labels)
+
+
 def main():
-    # ścieżki do plików
     paths = ["1_1.csv", "1_2.csv", "1_3.csv", "2_1.csv", "2_2.csv", "2_3.csv"]
 
-    sil_max = []  # maksyma silhoueete
-    sil_min = []  # minima silhoueete
+    kmeans_met_max = [2, 2, 6, 2, 3, 3]
+    kmeans_met_min = [10, 10, 7, 10, 10, 4]
 
-    met_max = [2, 2, 6, 2, 3, 3]  # maksima innych miar
-    met_min = [10, 10, 7, 10, 10, 4]  # minima innych miar
+    dbscan_met_max = [0.8, 0.7, 0.05, 0.55, 0.7, 0.35]
+    dbscan_met_min = [0.05, 0.95, 0.55, 0.05, 0.05, 0.95]
 
-    n_clusters_list = [n_clusters for n_clusters in range(2, 15)]
-    eps_list = [x / 100 for x in range(5, 165, 10)]
+    n_clusters_list = [n_clusters for n_clusters in range(2, 12)]
+    eps_list = [x / 100 for x in range(5, 100, 5)]
 
     datasets_from_csv = load_from_csv(paths)
+    datasets_normalized = scale_datasets(datasets_from_csv)
 
-    charts_clusters(datasets_from_csv)
-    charts_kmeans_clusters(datasets_from_csv)
+    charts_clusters_real(datasets_normalized)
 
-    # todo get rid of
-    charts_dbscan_clusters(datasets_from_csv)
+    kmeans_all_silhouettes = calculate_kmeans_silhouette_scores(datasets_normalized, n_clusters_list)
+    kmeans_sil_min_indices, kmeans_sil_max_indices = calculate_min_max_silhouette_indices(kmeans_all_silhouettes)
+    kmeans_sil_min = [n_clusters_list[i] for i in kmeans_sil_min_indices]
+    kmeans_sil_max = [n_clusters_list[i] for i in kmeans_sil_max_indices]
 
-    chart_silhoueete(datasets_from_csv, n_clusters_list, sil_max, sil_min)
-    chart_measures(datasets_from_csv, n_clusters_list)
-    charts_sil_clusters(datasets_from_csv, sil_max)
-    charts_sil_clusters(datasets_from_csv, sil_min)
-    charts_metrics_clusters(datasets_from_csv, met_max)
-    charts_metrics_clusters(datasets_from_csv, met_min)
+    charts_silhouette(kmeans_all_silhouettes, n_clusters_list)
+    charts_clusters_kmeans_silhouette(datasets_normalized, kmeans_sil_min)
+    charts_clusters_kmeans_silhouette(datasets_normalized, kmeans_sil_max)
+
+    chart_kmeans_measures(datasets_normalized, n_clusters_list)
+    charts_kmeans_metrics_clusters(datasets_normalized, kmeans_met_min)
+    charts_kmeans_metrics_clusters(datasets_normalized, kmeans_met_max)
+
+    dbscan_all_silhouettes, all_cluster_counts = calculate_dbscan_silhouettes(datasets_normalized, eps_list)
+    dbscan_sil_min_indices, dbscan_sil_max_indices = calculate_min_max_silhouette_indices(dbscan_all_silhouettes)
+    dbscan_sil_min = [eps_list[i] for i in dbscan_sil_min_indices]
+    dbscan_sil_max = [eps_list[i] for i in dbscan_sil_max_indices]
+
+    charts_silhouette(dbscan_all_silhouettes, eps_list)
+    charts_clusters_dbscan_silhouette(datasets_normalized, dbscan_sil_min)
+    charts_clusters_dbscan_silhouette(datasets_normalized, dbscan_sil_max)
+
+    chart_dbscan_measures(datasets_normalized, eps_list)
+    charts_clusters_dbscan_silhouette(datasets_normalized, dbscan_met_max)
+    charts_clusters_dbscan_silhouette(datasets_normalized, dbscan_met_min)
 
     plt.show()
 

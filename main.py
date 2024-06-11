@@ -101,12 +101,15 @@ def calculate_kmeans_silhouette_scores(datasets, n_clusters_list):
 def charts_kmeans_silhouette(all_silhouettes, n_clusters_list):
     fig, ax = plt.subplots(1, 6, figsize=(30, 5))
     fig.tight_layout()
+
     fig.subplots_adjust(bottom=0.1)
     for silhouettes, axis in zip(all_silhouettes, ax):
         axis.plot(n_clusters_list, silhouettes)
         axis.set_xlabel("n_clusters")
+
         for n_clusters in n_clusters_list:
             axis.axvline(x=n_clusters, color='gray', linestyle='--', alpha=0.5)
+            plt.setp(axis, ylim=(-1.01, 1.01))
 
 
 def charts_dbscan_silhouette(all_silhouettes, eps_list, all_cluster_counts):
@@ -116,7 +119,7 @@ def charts_dbscan_silhouette(all_silhouettes, eps_list, all_cluster_counts):
     for silhouettes, axis, cluster_counts in zip(all_silhouettes, ax, all_cluster_counts):
         axis.plot(eps_list, silhouettes)
         axis.set_xlabel("eps")
-
+        plt.setp(axis, ylim=(-1.01, 1.01))
         for eps in eps_list:
             axis.axvline(x=eps, color='gray', linestyle='--', alpha=0.5)
         for claster_counts, eps in zip(cluster_counts, eps_list):
@@ -191,6 +194,7 @@ def calculate_metrics2(y_true, dataset, cluster_results):
 def chart_kmeans_measures(datasets, n_clusters_list):
     fig, ax = plt.subplots(1, 6, figsize=(30, 5))
     fig.tight_layout()
+    plt.setp(ax, ylim=(-0.5, 1.01))
     fig.subplots_adjust(bottom=0.1)
     for dataset, axis in zip(datasets, ax):
         k_meansNN_rate = []  # wartosci miary silhouette
@@ -209,6 +213,7 @@ def chart_kmeans_measures(datasets, n_clusters_list):
 def chart_dbscan_measures(datasets, eps_list, all_cluster_counts):
     fig, ax = plt.subplots(1, 6, figsize=(30, 5))
     fig.tight_layout()
+    plt.setp(ax, ylim=(-0.5, 1.01))
     fig.subplots_adjust(bottom=0.1)
     for dataset, axis, cluster_counts in zip(datasets, ax, all_cluster_counts):
 
@@ -343,7 +348,7 @@ def chart_from_sklearn_dataset(dataset, n_clusters_list, eps_list):
 
     fig, ax = plt.subplots(1, 4, figsize=(20, 5))
     fig.tight_layout()
-
+    plt.setp(ax, ylim=(-0.5, 1.01))
     ax[0].plot(n_clusters_list, sils_kmeans)
     ax[0].set_xlabel("n_clusters")
     for n_clusters in n_clusters_list:
